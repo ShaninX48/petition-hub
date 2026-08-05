@@ -1,0 +1,23 @@
+{
+  "name": "Petition Hub",
+  "short_name": "Petition Hub",
+  "description": "Verified petitions and protests for civic issues.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#013A40",
+  "theme_color": "#028090",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

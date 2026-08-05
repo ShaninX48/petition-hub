@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f1f3f1;
+  --paper-raised: #ffffff;
+  --paper-line: #d8dcd3;
+  --ink: #1a1d1e;
+  --ink-muted: #5b6360;
+  --navy: #1b2a4a;
+  --seal-green: #1f6e43;
+  --seal-red: #a6321d;
+  --brass: #a98a3e;
+  --navbar: #1b2a4a;
+  --navy-deep: #121f38;
+}
+
+.dark {
+  --paper: #12161a;
+  --paper-raised: #1a2029;
+  --paper-line: #2b333c;
+  --ink: #ecede9;
+  --ink-muted: #9aa3a0;
+  --navy: #7fa0d9;
+  --seal-green: #4fbf87;
+  --seal-red: #e2694e;
+  /* brass, navbar and navy-deep stay constant across themes on purpose —
+     the letterhead navbar is always dark navy, like printed letterhead ink */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-line: var(--paper-line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-navy: var(--navy);
+  --color-seal-green: var(--seal-green);
+  --color-seal-red: var(--seal-red);
+  --color-brass: var(--brass);
+  --color-navbar: var(--navbar);
+  --color-navy-deep: var(--navy-deep);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-plex-mono), "Courier New", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Utility classes for the recurring "case file" / registry motifs */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-tight {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.case-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-brass);
+  text-transform: uppercase;
+}
+
+.rule-double {
+  border-top: 1px solid var(--color-brass);
+  border-bottom: 1px solid var(--color-brass);
+  height: 3px;
+}
+
+.btn-official {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.card-file {
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-paper-line);
+  border-left: 3px solid var(--color-navy);
+  border-radius: 2px;
+  position: relative;
 }
