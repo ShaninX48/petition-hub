@@ -50,8 +50,31 @@ export default function NewPetitionPage() {
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
+        const { latitude, longitude } = pos.coords;
+        setCoords({ lat: latitude, lng: longitude });
+        // Browser geolocation returns only coordinates — reverse-geocode
+        // them so the text field auto-fills too. Never overwrites text
+        // the user already typed.
+        fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        )
+          .then((res) => (res.ok ? res.json() : null))
+          .then((geo) => {
+            if (!geo) return;
+            const parts = [
+              geo.locality || geo.city,
+              geo.principalSubdivision,
+            ].filter(Boolean);
+            const unique = [...new Set(parts)];
+            if (unique.length > 0) {
+              setLocationLabel((prev) => prev || unique.join(", "));
+            }
+          })
+          .catch(() => {
+            // Offline / API down — coordinates are still pinned,
+            // user can type the label manually.
+          })
+          .finally(() => setLocating(false));
       },
       () => {
         setError("Couldn't get your location — you can still add a text label.");
