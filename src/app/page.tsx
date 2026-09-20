@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import {
@@ -31,6 +31,26 @@ function SignatureLine({ p }: { p: TrendingPetition | NearbyPetition }) {
   );
 }
 
+const LOAD_TIMEOUT_MS = 10000;
+
+// Rejects if the Supabase request hangs (e.g. paused project, network
+// stall) so the UI never sticks on "Loading…" forever.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `${label} timed out after ${ms / 1000}s — server unreachable. Check Supabase project status, then retry.`
+          )
+        ),
+      ms
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [petitions, setPetitions] = useState<TrendingPetition[]>([]);
@@ -42,31 +62,45 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [signingId, setSigningId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const trending = await getTrendingPetitions();
-        setPetitions(trending);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const trending = await withTimeout(
+        getTrendingPetitions(),
+        LOAD_TIMEOUT_MS,
+        "Loading petitions"
+      );
+      setPetitions(trending);
 
-        const { data } = await supabase.auth.getUser();
-        if (data.user) {
-          setUser(data.user);
-          const signed = await getMySignedPetitionIds(data.user.id);
-          setSignedIds(signed);
-        }
-      } catch (err) {
-        const message =
-          err && typeof err === "object" && "message" in err
-            ? String((err as { message: unknown }).message)
-            : "Couldn't load petitions.";
-        setError(message);
-      } finally {
-        setLoading(false);
+      const { data } = await withTimeout(
+        supabase.auth.getUser(),
+        LOAD_TIMEOUT_MS,
+        "Auth check"
+      );
+      if (data.user) {
+        setUser(data.user);
+        const signed = await withTimeout(
+          getMySignedPetitionIds(data.user.id),
+          LOAD_TIMEOUT_MS,
+          "Loading your signatures"
+        );
+        setSignedIds(signed);
       }
+    } catch (err) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: unknown }).message)
+          : "Couldn't load petitions.";
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-
-    load();
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   function findNearby() {
     if (!navigator.geolocation) {
@@ -78,10 +112,14 @@ export default function HomePage() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const results = await getNearbyPetitions(
-            pos.coords.latitude,
-            pos.coords.longitude,
-            10
+          const results = await withTimeout(
+            getNearbyPetitions(
+              pos.coords.latitude,
+              pos.coords.longitude,
+              10
+            ),
+            LOAD_TIMEOUT_MS,
+            "Loading nearby petitions"
           );
           setNearby(results);
         } catch (err) {
@@ -205,9 +243,14 @@ export default function HomePage() {
       </div>
 
       {error && (
-        <p className="mb-4 text-sm" style={{ color: "var(--color-seal-red)" }}>
-          {error}
-        </p>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <p className="text-sm" style={{ color: "var(--color-seal-red)" }}>
+            {error}
+          </p>
+          <button onClick={load} className="btn-official" style={{ padding: "6px 14px" }}>
+            Retry
+          </button>
+        </div>
       )}
 
       {loading ? (
