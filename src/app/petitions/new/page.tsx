@@ -52,28 +52,19 @@ export default function NewPetitionPage() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setCoords({ lat: latitude, lng: longitude });
-        // Browser geolocation returns only coordinates — reverse-geocode
-        // them so the text field auto-fills too. Never overwrites text
-        // the user already typed.
         fetch(
           `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
         )
           .then((res) => (res.ok ? res.json() : null))
           .then((geo) => {
             if (!geo) return;
-            const parts = [
-              geo.locality || geo.city,
-              geo.principalSubdivision,
-            ].filter(Boolean);
+            const parts = [geo.locality || geo.city, geo.principalSubdivision].filter(Boolean);
             const unique = [...new Set(parts)];
             if (unique.length > 0) {
               setLocationLabel((prev) => prev || unique.join(", "));
             }
           })
-          .catch(() => {
-            // Offline / API down — coordinates are still pinned,
-            // user can type the label manually.
-          })
+          .catch(() => {})
           .finally(() => setLocating(false));
       },
       () => {
@@ -114,24 +105,27 @@ export default function NewPetitionPage() {
 
   if (checkingAuth) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-neutral-500">
-        Checking your session...
+      <main className="mx-auto max-w-lg px-4 py-10">
+        <div className="skeleton h-8 w-48" />
+        <div className="skeleton mt-4 h-64" />
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="mb-1 text-2xl font-bold">Create a petition</h1>
-      <p className="mb-6 text-sm text-neutral-500">
-        Every submission is reviewed by an admin before it goes public. You&apos;ll be able to
-        track its status on your dashboard.
+      <div className="case-number mb-2">New filing</div>
+      <h1 className="font-display text-2xl sm:text-3xl" style={{ color: "var(--color-navy)" }}>
+        File a petition
+      </h1>
+      <p className="mb-6 mt-1 text-sm" style={{ color: "var(--color-ink-muted)" }}>
+        Every submission is reviewed by an admin before it goes public. Track its status on your dashboard.
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="card-file flex flex-col gap-5 p-5 sm:p-6">
         <div>
-          <label htmlFor="title" className="mb-1 block text-sm font-medium">
-            Title
+          <label htmlFor="title" className="label-official">
+            Title · {title.length}/120
           </label>
           <input
             id="title"
@@ -141,13 +135,13 @@ export default function NewPetitionPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Fix the unannounced roadblock on Mirpur Road"
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+            className="input-official"
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="mb-1 block text-sm font-medium">
-            Description
+          <label htmlFor="description" className="label-official">
+            Description · {description.length} chars
           </label>
           <textarea
             id="description"
@@ -155,31 +149,32 @@ export default function NewPetitionPage() {
             rows={5}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Explain the issue clearly — this is what the admin reviews first."
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+            placeholder="What happened, where, who is affected — this is what the admin reviews first."
+            className="input-official"
+            style={{ resize: "vertical" }}
           />
         </div>
 
         <div>
-          <label htmlFor="category" className="mb-1 block text-sm font-medium">
+          <label htmlFor="category" className="label-official">
             Category
           </label>
-          <select
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
-          >
+          <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                className={`chip ${category === c ? "chip-active" : ""}`}
+              >
                 {c}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         <div>
-          <label htmlFor="locationLabel" className="mb-1 block text-sm font-medium">
+          <label htmlFor="locationLabel" className="label-official">
             Location
           </label>
           <input
@@ -188,30 +183,31 @@ export default function NewPetitionPage() {
             value={locationLabel}
             onChange={(e) => setLocationLabel(e.target.value)}
             placeholder="e.g. Mirpur 10, Dhaka"
-            className="mb-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+            className="input-official mb-2"
           />
           <button
             type="button"
             onClick={useMyLocation}
             disabled={locating}
-            className="text-xs font-medium text-teal-700 hover:underline disabled:opacity-60"
+            className="btn-official btn-ghost w-full sm:w-auto"
+            style={{ padding: "9px 16px", opacity: locating ? 0.6 : 1 }}
           >
             {locating
-              ? "Getting your location..."
+              ? "📍 Getting your location..."
               : coords
-              ? `Pinned: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} — update?`
-              : "Use my current location"}
+                ? `📍 Pinned ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} — update?`
+                : "📍 Use my current location"}
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="rounded-lg px-4 py-3 text-sm" style={{ color: "var(--color-seal-red)", border: "1px solid var(--color-seal-red)" }}>
+            {error}
+          </p>
+        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-2 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
-        >
-          {loading ? "Submitting..." : "Submit for review"}
+        <button type="submit" disabled={loading} className="btn-official btn-brass" style={{ padding: "13px", fontSize: 13, opacity: loading ? 0.6 : 1 }}>
+          {loading ? "Submitting for review…" : "📨 Submit for review"}
         </button>
       </form>
     </main>

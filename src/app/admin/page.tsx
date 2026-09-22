@@ -23,8 +23,6 @@ export default function AdminPage() {
   const [loadingQueue, setLoadingQueue] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Tracks which petition is mid-action, and which one has its reject-note
-  // input open, so the UI can disable buttons / show the note field per-row.
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState("");
@@ -51,6 +49,7 @@ export default function AdminPage() {
     }
 
     check();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   async function loadQueue() {
@@ -109,8 +108,9 @@ export default function AdminPage() {
 
   if (checking) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-neutral-500">
-        Checking access...
+      <main className="mx-auto max-w-2xl px-4 py-10">
+        <div className="skeleton h-8 w-48" />
+        <div className="skeleton mt-4 h-28" />
       </main>
     );
   }
@@ -118,54 +118,78 @@ export default function AdminPage() {
   if (!authorized) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <p className="text-sm text-neutral-500">
+        <div className="text-4xl">🔒</div>
+        <h1 className="font-display mt-3 text-2xl" style={{ color: "var(--color-navy)" }}>
+          Restricted file
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--color-ink-muted)" }}>
           You don&apos;t have access to this page.
         </p>
+        <a href="/" className="btn-official btn-ghost mt-4 inline-block" style={{ padding: "10px 20px" }}>
+          Back to petitions
+        </a>
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-1 text-2xl font-bold">Review queue</h1>
-      <p className="mb-6 text-sm text-neutral-500">
-        {petitions.length} petition{petitions.length === 1 ? "" : "s"} awaiting review.
+      <div className="case-number mb-2">Admin · Review desk</div>
+      <h1 className="font-display text-2xl sm:text-3xl" style={{ color: "var(--color-navy)" }}>
+        Review queue
+      </h1>
+      <p className="mb-6 mt-1 text-sm" style={{ color: "var(--color-ink-muted)" }}>
+        {petitions.length} petition{petitions.length === 1 ? "" : "s"} awaiting review — oldest first.
       </p>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mb-4 rounded-lg px-4 py-3 text-sm" style={{ color: "var(--color-seal-red)", border: "1px solid var(--color-seal-red)" }}>
+          {error}
+        </p>
+      )}
 
       {loadingQueue ? (
-        <p className="text-sm text-neutral-500">Loading queue...</p>
+        <ul className="flex flex-col gap-4">
+          <li className="skeleton h-32" />
+          <li className="skeleton h-32" />
+        </ul>
       ) : petitions.length === 0 ? (
-        <p className="rounded-md border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500">
-          Nothing pending — the queue is clear.
-        </p>
+        <div className="px-4 py-12 text-center" style={{ border: "1px dashed var(--color-paper-line)", borderRadius: 12 }}>
+          <div className="text-4xl">✅</div>
+          <p className="mt-3 text-sm" style={{ color: "var(--color-ink-muted)" }}>
+            Nothing pending — the queue is clear.
+          </p>
+        </div>
       ) : (
         <ul className="flex flex-col gap-4">
           {petitions.map((p) => (
-            <li key={p.id} className="rounded-lg border border-neutral-200 p-4">
-              <h2 className="mb-1 font-semibold">{p.title}</h2>
-              <p className="mb-2 text-sm text-neutral-600">{p.description}</p>
-              <div className="mb-3 flex items-center gap-3 text-xs text-neutral-400">
-                {p.category && <span>{p.category}</span>}
-                {p.location_label && <span>· {p.location_label}</span>}
+            <li key={p.id} className="card-file p-5">
+              <div className="case-number mb-2">CASE No. PH-{p.id.slice(0, 6).toUpperCase()}</div>
+              <h2 className="font-display mb-1 text-lg" style={{ color: "var(--color-ink)" }}>{p.title}</h2>
+              <p className="mb-2 text-sm leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>{p.description}</p>
+              <div className="font-mono-tight mb-4 flex flex-wrap items-center gap-2" style={{ fontSize: 11, color: "var(--color-ink-muted)" }}>
+                {p.category && <span>{p.category.toUpperCase()}</span>}
+                {p.location_label && <span>· {p.location_label.toUpperCase()}</span>}
                 <span>· {new Date(p.created_at).toLocaleDateString()}</span>
               </div>
 
               {rejectingId === p.id ? (
                 <div className="flex flex-col gap-2">
+                  <label className="label-official" htmlFor={`reject-${p.id}`}>Reason shown to creator (required)</label>
                   <textarea
+                    id={`reject-${p.id}`}
                     value={rejectNote}
                     onChange={(e) => setRejectNote(e.target.value)}
-                    placeholder="Reason shown to the creator (required)"
+                    placeholder="e.g. Needs a specific location and photo evidence"
                     rows={2}
-                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                    className="input-official"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <button
                       onClick={() => handleReject(p.id)}
                       disabled={busyId === p.id || rejectNote.trim().length === 0}
-                      className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                      className="btn-official flex-1"
+                      style={{ padding: "10px", color: "#F1F3F1", background: "var(--color-seal-red)", opacity: busyId === p.id ? 0.6 : 1 }}
                     >
                       {busyId === p.id ? "Rejecting..." : "Confirm reject"}
                     </button>
@@ -174,25 +198,28 @@ export default function AdminPage() {
                         setRejectingId(null);
                         setRejectNote("");
                       }}
-                      className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-100"
+                      className="btn-official btn-ghost flex-1"
+                      style={{ padding: "10px" }}
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     onClick={() => handleApprove(p.id)}
                     disabled={busyId === p.id}
-                    className="rounded-md bg-teal-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-60"
+                    className="btn-official btn-primary flex-1"
+                    style={{ padding: "10px", opacity: busyId === p.id ? 0.6 : 1 }}
                   >
-                    {busyId === p.id ? "Approving..." : "Approve"}
+                    {busyId === p.id ? "Approving..." : "✓ Approve & publish"}
                   </button>
                   <button
                     onClick={() => setRejectingId(p.id)}
                     disabled={busyId === p.id}
-                    className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
+                    className="btn-official flex-1"
+                    style={{ padding: "10px", color: "var(--color-seal-red)", border: "1px solid var(--color-seal-red)", background: "transparent" }}
                   >
                     Reject
                   </button>

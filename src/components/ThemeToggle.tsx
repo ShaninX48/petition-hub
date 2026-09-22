@@ -23,16 +23,24 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="btn-official"
       style={{
         color: "#F1F3F1",
         border: "1px solid var(--color-brass)",
-        padding: "6px 10px",
+        borderRadius: 9999,
+        width: 34,
+        height: 34,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
         background: "transparent",
+        cursor: "pointer",
+        fontSize: 16,
+        flexShrink: 0,
       }}
-      aria-label="Toggle dark mode"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {isDark ? "Light mode" : "Dark mode"}
+      {isDark ? "☀" : "☾"}
     </button>
   );
 }

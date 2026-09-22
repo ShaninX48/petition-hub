@@ -4,6 +4,7 @@ import { Source_Serif_4, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import RegisterServiceWorker from "../components/RegisterServiceWorker";
 
 const sourceSerif = Source_Serif_4({
@@ -53,7 +54,8 @@ export default function RootLayout({
         </Script>
         <RegisterServiceWorker />
         <Navbar />
-        {children}
+        <div className="flex-1">{children}</div>
+        <Footer />
       </body>
     </html>
   );
